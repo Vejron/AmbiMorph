@@ -27,5 +27,17 @@
     <ClInclude Include="Settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Wifi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Bulb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Animator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
