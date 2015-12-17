@@ -1,3 +1,5 @@
+#pragma once
+
 class WifiController
 {
 private:
@@ -19,8 +21,7 @@ public:
 	volatile bool isMsgReady();
 	volatile bool loop();
 	size_t copyFrames(KeyFrame frames[]);
-	void getMsg(uint32_t& color, int32_t& position);
-
+	
 	void wifiCb(void* response);
 	void mqttConnected(void* response);
 	void mqttDisconnected(void* response);
@@ -28,9 +29,6 @@ public:
 	void mqttPublished(void* response);
 
 	void wifiInit();
-
-private:
-
 };
 
 
@@ -71,13 +69,6 @@ size_t WifiController::copyFrames(KeyFrame frames[])
 	return _animationSize;
 }
 
-void WifiController::getMsg(uint32_t& color, int32_t& position)
-{
-	_msgReady = false; //reset
-	color = _color;
-	position = _position;
-}
-
 void WifiController::wifiCb(void* response)
 {
 	uint32_t status;
@@ -101,13 +92,12 @@ void WifiController::mqttConnected(void* response)
 {
 	DEBUG_PRINTLN("Mqtt: Connected");
 	_mqtt->subscribe(TOPIC_COMMAND);
-	_mqtt->publish(TOPIC_STATUS, "ON");
+	_mqtt->publish(TOPIC_STATUS, "ON", 0, 0);
 }
 
 void WifiController::mqttDisconnected(void* response)
 {
-	DEBUG_PRINTLN("Mqtt: disconected from service");
-	// TODO: show state and try reconect
+	DEBUG_PRINTLN("Mqtt: disconected from service... retrying in 10");
 }
 
 void WifiController::mqttData(void* response)
@@ -118,24 +108,19 @@ void WifiController::mqttData(void* response)
 
 	if (topic == TOPIC_COMMAND)
 	{
-		DEBUG_PRINTLN(jsonData);
+		//DEBUG_PRINTLN(jsonData);
 		DynamicJsonBuffer jsonBuffer;
 		JsonObject& root = jsonBuffer.parseObject(jsonData);
 		if (root.success())
 		{
 			if (root.containsKey("c"))
 			{
-				// ? loop
-				/*if (strcmp(root["l"].asString(),"true"))
-				_loop = false;
-				else
-				_loop = true;*/
-				//_loop = root["l"];
 				String loop = root["l"].as<String>();
 				if (loop.equals("false"))
 					_loop = false;
 				else
 					_loop = true;
+
 				// parse animation sequence
 				JsonArray& cmdArray = root["c"].asArray();
 				for (size_t i = 0; i < cmdArray.size(); i++)
@@ -147,14 +132,9 @@ void WifiController::mqttData(void* response)
 					String htmlColor = cmdArray[i]["c"].as<String>();
 					// Get rid of '#' and convert it to integer
 					uint32_t number = (uint32_t)strtol(&htmlColor[1], NULL, 16);
-					//htmlColor.remove(0, 1); // Remove # from html rep
-					//htmlColor.replace('#', 'x');
-					//htmlColor = '0' + htmlColor;
-
-					DEBUG_PRINTLN(number);
+					
 					_frames[i].color.setColorCode(number);
-					DEBUG_PRINTLN(_frames[i].color);
-
+					
 					//get motor settings
 					_frames[i].position = cmdArray[i]["m"]["p"].as<uint32_t>();
 					_frames[i].speed = cmdArray[i]["m"]["s"].as<uint32_t>();
@@ -164,12 +144,11 @@ void WifiController::mqttData(void* response)
 					_frames[i].timeOut = cmdArray[i]["t"]["l"].as<uint32_t>();
 					_frames[i].rate = cmdArray[i]["t"]["r"].as<uint32_t>();
 				}
-				//DEBUG_PRINTLN(cmdArray[0]["c"][0].as<>());
 				_animationSize = cmdArray.size();
 				_msgReady = true;
 			}
 
-			DEBUG_PRINTLN("Set new color & position");
+			//DEBUG_PRINTLN("Got new animation sequence");
 		}
 	}
 }
@@ -182,7 +161,7 @@ void WifiController::mqttPublished(void* response)
 // Init wifi
 void WifiController::wifiInit()
 {
-	DEBUG_PRINTLN("Teensy: resetting esp");
+	DEBUG_PRINTLN("Teensy: resetting esp8266");
 	_esp->disable();
 	delay(500);
 	_esp->enable();
@@ -193,7 +172,7 @@ void WifiController::wifiInit()
 
 	// Setup Mqtt client
 	DEBUG_PRINTLN("Teensy: setup mqtt client");
-	if (!_mqtt->begin("abb_pslamp1", "", "", 60, 1)) {
+	if (!_mqtt->begin(MQTT_CLIENT_ID1, "", "", 60, 1)) {
 		DEBUG_PRINTLN("Teensy: fail to setup mqtt");
 		while (1); //reset
 	}

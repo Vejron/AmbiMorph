@@ -1,3 +1,5 @@
+#pragma once
+
 elapsedMillis g_sinceLastStep;
 
 class TwinkleFx

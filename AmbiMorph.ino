@@ -34,8 +34,8 @@ elapsedMillis sinceLastIsr;
 // Create an IntervalTimer object 
 IntervalTimer stepTimer;
 
-void priorityTask() {
-	winch.run();
+void priorityTasks() {
+	
 	animator.run();
 
 	if (sinceLastIsr > 5000)
@@ -53,15 +53,16 @@ void setup() {
 							// reset and setup everything
 	winch.begin();
 	bulb.begin();
-	wifi.begin(true);
+	wifi.begin(false);
 	animator.begin(&bulb, &winch, &wifi);
 
 	// start interrupt routine
 	sinceLastIsr = 0;
-	stepTimer.begin(priorityTask, 1000);
+	stepTimer.begin(priorityTasks, 500);
 }
 
 void loop() {
 	// Handle esp comunication
 	wifi.process();
+	winch.run();
 }
