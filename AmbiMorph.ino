@@ -36,7 +36,7 @@ IntervalTimer stepTimer;
 
 void priorityTasks() {
 	
-	animator.run();
+	//animator.run();
 
 	if (sinceLastIsr > 5000)
 	{
@@ -58,11 +58,13 @@ void setup() {
 
 	// start interrupt routine
 	sinceLastIsr = 0;
-	stepTimer.begin(priorityTasks, 500);
+	//stepTimer.begin(priorityTasks, 500);
 }
 
 void loop() {
 	// Handle esp comunication
 	wifi.process();
+	animator.run();
 	winch.run();
+	bulb.run();
 }

@@ -136,13 +136,13 @@ void WifiController::mqttData(void* response)
 					_frames[i].color.setColorCode(number);
 					
 					//get motor settings
-					_frames[i].position = cmdArray[i]["m"]["p"].as<uint32_t>();
-					_frames[i].speed = cmdArray[i]["m"]["s"].as<uint32_t>();
-					_frames[i].acceleration = cmdArray[i]["m"]["a"].as<uint32_t>();
+					_frames[i].position = cmdArray[i]["mp"].as<uint32_t>();
+					_frames[i].speed = cmdArray[i]["ms"].as<double>();
+					_frames[i].acceleration = cmdArray[i]["ma"].as<uint32_t>();
 
 					// get timings
-					_frames[i].timeOut = cmdArray[i]["t"]["l"].as<uint32_t>();
-					_frames[i].rate = cmdArray[i]["t"]["r"].as<uint32_t>();
+					_frames[i].timeOut = cmdArray[i]["tl"].as<uint32_t>();
+					_frames[i].rate = cmdArray[i]["tr"].as<uint32_t>();
 				}
 				_animationSize = cmdArray.size();
 				_msgReady = true;

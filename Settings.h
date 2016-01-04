@@ -38,10 +38,12 @@
 #define TOPIC_STATUS	"/vejronps/ver101/1/s"
 #define NUM_LEDS_PER_STRIP  40
 #define NUM_STRIPS          1
-#define MAX_BRIGHTNESS      200
+#define MAX_BRIGHTNESS      255
 #endif
 
-#define MAX_KEYFRAMES	50
+#define MAX_KEYFRAMES		50
+#define MAX_SPEED			800
+#define MAX_ACCELERATION	4000
 
 #define STEPPER_END_PIN 9	// end stop for callibration
 #define ESP_RESET		3	// ESP8266 enable pin

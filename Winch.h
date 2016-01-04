@@ -14,7 +14,7 @@ private:
 		return x < a ? a : (x > b ? b : x);
 	}
 
-	void setTargetRaw(int target)
+	void setTargetRaw(volatile int target)
 	{
 		if (target != m_target)
 		{
@@ -28,7 +28,6 @@ private:
 				DEBUG_PRINTLN("Warning: not in range capping");
 			}
 			enableOutputs();
-			DEBUG_PRINTLN("Enable outputs");
 			m_stepper.moveTo(m_target);
 		}
 	}
@@ -110,17 +109,25 @@ public:
 		m_calibrated = true;
 	}
 
-	void setTarget(int target)
+	void setTarget(int target, float speed, float acceleration)
 	{
 		if (m_calibrated)
 		{
-			int actual = -STEPPER_MIN * (target / 100.0);
-			setTargetRaw(actual);
+			m_stepper.setAcceleration(acceleration);
+			m_stepper.setMaxSpeed(speed);
+			setTargetRaw(-STEPPER_MIN * (target / 100.0));
+			//setTargetRaw(-target);
 		}
 		else
 		{
 			DEBUG_PRINTLN("Warning: not calibrated, no movement possible");
 		}
+	}
+
+	bool isAtTarget()
+	{
+		if (m_stepper.distanceToGo() == 0) return true;
+		else return false;
 	}
 
 	void run()
@@ -133,13 +140,13 @@ public:
 			DEBUG_PRINTLN("Error: out of calibration, restart");
 		}
 #endif
-		if (m_enabled && m_calibrated)
+		if (m_calibrated)
 		{
 			if (!m_stepper.run())
 			{
 				//at target, disable motor to make it less hot
 				disableOutputs();
-				DEBUG_PRINTLN("Info: at target position");
+				//DEBUG_PRINTLN("Info: at target position");
 
 			}
 		}

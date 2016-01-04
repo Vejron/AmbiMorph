@@ -8,7 +8,12 @@ enum ControllState
 	FX_TWINKLE,
 	FX_ALARM1,
 	FX_ALARM2,
-	FX_RAINBOW
+	FX_RAINBOW,
+	DIRECT_RUN,
+	SMOOTH_RUN,
+	FX_TWINKLE_RUN,
+	FX_ALARM1_RUN,
+	FX_ALARM2_RUN
 };
 
 
@@ -26,7 +31,7 @@ struct KeyFrame
 	CRGB color;
 
 	uint32_t position;
-	uint32_t speed;
+	double speed;
 	uint32_t acceleration;
 
 	uint32_t timeOut;

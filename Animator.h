@@ -66,8 +66,8 @@ public:
 
 	}
 private:
-	const size_t _nbrOfStrips = 10;
-	const size_t _stripLength = 5;
+	const size_t _nbrOfStrips = 4;
+	const size_t _stripLength = 10;
 	volatile size_t _stripIndex = 0;
 	uint8_t  _fade = 40;
 };
@@ -104,8 +104,8 @@ public:
 
 	}
 private:
-	const int _nbrOfStrips = 10;
-	const int _stripLength = 5;
+	const int _nbrOfStrips = 4;
+	const int _stripLength = 10;
 	volatile int _stripIndex = 0;
 	uint8_t  _fade = 80;
 };
@@ -173,44 +173,105 @@ void Animator::run()
 	case DIRECT:
 		// set values
 		_pBulb->setRGB(_keyFrames[_animationIndex].color);
-		_pWinch->setTarget(_keyFrames[_animationIndex].position);
+		_pWinch->setTarget(_keyFrames[_animationIndex].position, MAX_SPEED, MAX_ACCELERATION);
+		_ctrlState = DIRECT_RUN;
+		break;
+
+	case DIRECT_RUN:
 		next();
 		break;
 
 	case SMOOTH:
 		// set values
-		_pBulb->setRgbSmooth(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].timeOut);
-		_pWinch->setTarget(_keyFrames[_animationIndex].position);
+		_pBulb->setRGB(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].timeOut, _keyFrames[_animationIndex].rate);
+		_pWinch->setTarget(_keyFrames[_animationIndex].position, _keyFrames[_animationIndex].speed, _keyFrames[_animationIndex].acceleration);
+		_ctrlState = SMOOTH_RUN;
+		break;
+
+	case SMOOTH_RUN:
 		next();
 		break;
 
 	case FX_TWINKLE:
+		_pWinch->setTarget(_keyFrames[_animationIndex].position, _keyFrames[_animationIndex].speed, _keyFrames[_animationIndex].acceleration);
+		_ctrlState = FX_TWINKLE_RUN;
+		break;
+
+	case FX_TWINKLE_RUN:
 		twinkleFX.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
-		_pWinch->setTarget(_keyFrames[_animationIndex].position);
 		next();
 		break;
 
 	case FX_ALARM1:
+		_pWinch->setTarget(_keyFrames[_animationIndex].position, _keyFrames[_animationIndex].speed, _keyFrames[_animationIndex].acceleration);
+		_ctrlState = FX_ALARM1_RUN;
+		break;
+
+	case FX_ALARM1_RUN:
 		alarmFX1.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
-		_pWinch->setTarget(_keyFrames[_animationIndex].position);
 		next();
 		break;
 
 	case FX_ALARM2:
-		alarmFX2.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
-		_pWinch->setTarget(_keyFrames[_animationIndex].position);
-		next();
+		_pWinch->setTarget(_keyFrames[_animationIndex].position, _keyFrames[_animationIndex].speed, _keyFrames[_animationIndex].acceleration);
+		_ctrlState = FX_ALARM2_RUN;
 		break;
 
-	case FX_RAINBOW:
-		rainBowFX.run(_pBulb, 20);
-		_pWinch->setTarget(_keyFrames[_animationIndex].position);
+	case FX_ALARM2_RUN:
+		alarmFX2.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
 		next();
 		break;
 
 	default:
 		break;
 	}
+
+	//switch (_ctrlState)
+	//{
+	//case NONE:
+	//	break;
+
+	//case DIRECT:
+	//	// set values
+	//	_pBulb->setRGB(_keyFrames[_animationIndex].color);
+	//	_pWinch->setTarget(_keyFrames[_animationIndex].position);
+	//	next();
+	//	break;
+
+	//case SMOOTH:
+	//	// set values
+	//	_pBulb->setRgbSmooth(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].timeOut);
+	//	_pWinch->setTarget(_keyFrames[_animationIndex].position);
+	//	next();
+	//	break;
+
+	//case FX_TWINKLE:
+	//	twinkleFX.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
+	//	_pWinch->setTarget(_keyFrames[_animationIndex].position);
+	//	next();
+	//	break;
+
+	//case FX_ALARM1:
+	//	alarmFX1.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
+	//	_pWinch->setTarget(_keyFrames[_animationIndex].position);
+	//	next();
+	//	break;
+
+	//case FX_ALARM2:
+	//	alarmFX2.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
+	//	_pWinch->setTarget(_keyFrames[_animationIndex].position);
+	//	next();
+	//	break;
+
+	//case FX_RAINBOW:
+	//	rainBowFX.run(_pBulb, 20);
+	//	_pWinch->setTarget(_keyFrames[_animationIndex].position);
+	//	next();
+	//	break;
+
+	//default:
+	//	break;
+	//}
 }
 
 inline void Animator::next()
@@ -218,25 +279,29 @@ inline void Animator::next()
 	// timeout
 	if (_sinceLast >= _keyFrames[_animationIndex].timeOut)
 	{
-		_sinceLast = 0;
-		if (_animationIndex < _animationLength - 1)
+		//check if motor and light finished
+		if (_pWinch->isAtTarget() && _pBulb->isAtTarget())
 		{
-			_animationIndex++;
-			_ctrlState = _keyFrames[_animationIndex].state;
-			DEBUG_PRINTLN("NEXT");
-		}
-		else if (_loop)
-		{
-			//reset animation and timer
-			_animationIndex = 0;
 			_sinceLast = 0;
-			_ctrlState = _keyFrames[0].state;
-			DEBUG_PRINTLN("LOOP");
-		}
-		else
-		{
-			_ctrlState = ControllState::NONE;
-			DEBUG_PRINTLN("NOLOOP");
+			if (_animationIndex < _animationLength - 1)
+			{
+				_animationIndex++;
+				_ctrlState = _keyFrames[_animationIndex].state;
+				DEBUG_PRINTLN("NEXT");
+			}
+			else if (_loop)
+			{
+				//reset animation and timer
+				_animationIndex = 0;
+				_sinceLast = 0;
+				_ctrlState = _keyFrames[0].state;
+				DEBUG_PRINTLN("LOOP");
+			}
+			else
+			{
+				_ctrlState = ControllState::NONE;
+				DEBUG_PRINTLN("NOLOOP");
+			}
 		}
 	}
 }
