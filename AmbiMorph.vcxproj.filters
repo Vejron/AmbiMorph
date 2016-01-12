@@ -39,5 +39,11 @@
     <ClInclude Include="Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UniqeID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StepCalc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -42,8 +42,8 @@
 #endif
 
 #define MAX_KEYFRAMES		50
-#define MAX_SPEED			800
-#define MAX_ACCELERATION	4000
+#define STEPPER_MAX_SPEED			350
+#define STEPPER_MAX_ACCELERATION	250
 
 #define STEPPER_END_PIN 9	// end stop for callibration
 #define ESP_RESET		3	// ESP8266 enable pin
@@ -52,7 +52,7 @@
 #define MOTORPIN3   18		// IN3 on the ULN2803A 
 #define MOTORPIN4   17		// IN4 on the ULN2803A 
 
-#define HALFSTEP    8
+//#define HALFSTEP    8
 #ifndef HALFSTEP
 #define STEPS_PER_OUTPUT_REVOLUTION 2041	//shuld be 64 * 32 but gear ratio is a bit off (cheap shit)
 #else
@@ -61,6 +61,12 @@
 
 #define STEPPER_SHAFT_LENGTH 92.0
 
-const float ___d = 15;
-const float ___C = PI * ___d;
-const int STEPPER_MIN = (STEPPER_SHAFT_LENGTH / ___C) * STEPS_PER_OUTPUT_REVOLUTION;  // 7969
+#ifdef ABB
+#define __D		15.0f
+#else
+#define __D		10.0f
+#endif // ABB
+
+//const float ___d = 15;
+const float ___C = PI * __D;
+const int STEPPER_RANGE = (STEPPER_SHAFT_LENGTH / ___C) * STEPS_PER_OUTPUT_REVOLUTION;  // 7969

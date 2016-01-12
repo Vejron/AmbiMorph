@@ -1,4 +1,6 @@
 #pragma once
+#include "StepCalc.h"
+using namespace StepCalc;
 
 elapsedMillis g_sinceLastStep;
 
@@ -122,6 +124,7 @@ public:
 	void run();
 
 private:
+	void transform();
 	void next();
 
 	WifiController *_pWifi;
@@ -150,19 +153,86 @@ void Animator::begin(Bulb *pBulb, Winch *pWinch, WifiController *pWifi)
 	_pWifi = pWifi;
 }
 
-// only called from isr!!
+void Animator::transform()
+{
+	_animationLength = _pWifi->copyFrames(_keyFrames);
+	_loop = _pWifi->loop();
+	int previus = _pWinch->getPosition() * (-1);
+
+	for (size_t i = 0; i < _animationLength; i++)
+	{
+		DEBUG_PRINT("Position: "); DEBUG_PRINTLN(previus);
+			// steps to move this frame
+		int stepsToMove = abs((_keyFrames[i].position * (STEPPER_RANGE / 100.0) - previus));
+		previus = _keyFrames[i].position * (STEPPER_RANGE / 100.0);
+
+		DEBUG_PRINT("Steps to move: "); DEBUG_PRINTLN(stepsToMove);
+
+		if (stepsToMove == 0) 
+		{
+			if (_keyFrames[i].timeOut < 500)
+				_keyFrames[i].timeOut = 500;
+		}
+		else 
+		{
+			double maxSpeed = calculateSpeedLimit(_keyFrames[i].timeOut / 1000.0, stepsToMove,
+				STEPPER_MAX_SPEED, STEPPER_MAX_ACCELERATION);
+			_keyFrames[i].speed = maxSpeed;
+			_keyFrames[i].acceleration = STEPPER_MAX_ACCELERATION;
+			DEBUG_PRINT("Calculated speed: "); DEBUG_PRINTLN(maxSpeed);
+			//console.log(stepsToMove);
+			//console.log(maxSpeed);
+			if (0.001 < 0.01) //TODO: SOMETHING VERY WRONG
+			{
+				DEBUG_PRINT("Calculated speed: "); DEBUG_PRINTLN(maxSpeed);
+				_keyFrames[i].timeOut = timeToMakeMove(stepsToMove, STEPPER_MAX_SPEED, STEPPER_MAX_ACCELERATION) * 1000;
+				_keyFrames[i].speed = STEPPER_MAX_SPEED;
+				_keyFrames[i].acceleration = STEPPER_MAX_ACCELERATION;
+			}
+		}
+
+		// calculate smooth rate
+		_keyFrames[i].rate = _keyFrames[i].timeOut / 255;
+	}
+}
+
 void Animator::run()
 {
 	if (_pWifi->isMsgReady())	// was there a new command?
 	{
 		//transfer all frames
-		_animationLength = _pWifi->copyFrames(_keyFrames);
-		_loop = _pWifi->loop();
+		//_animationLength = _pWifi->copyFrames(_keyFrames);
+		//_loop = _pWifi->loop();
 
 		//reset animation and timer
-		_animationIndex = 0;
-		_sinceLast = 0;
-		_ctrlState = _keyFrames[0].state;
+		//_animationIndex = 0;
+		//_sinceLast = 0;
+		//_ctrlState = _keyFrames[0].state;
+		DEBUG_PRINTLN("New command");
+		
+
+		if (_ctrlState == ControllState::NONE)
+		{
+			transform();
+			_animationIndex = 0;
+			_sinceLast = 0;
+			_ctrlState = _keyFrames[0].state;
+			DEBUG_PRINTLN("NONE");
+			DEBUG_PRINT("speed: "); DEBUG_PRINTLN(_keyFrames[0].speed);
+			DEBUG_PRINT("acc: "); DEBUG_PRINTLN(_keyFrames[0].acceleration);
+			DEBUG_PRINT("position: "); DEBUG_PRINTLN(_keyFrames[0].position);
+			DEBUG_PRINT("time: "); DEBUG_PRINTLN(_keyFrames[0].timeOut);
+		}
+		else
+		{
+			//mid sequence, stop motor and get valid start position
+			_ctrlState == STOP;
+			DEBUG_PRINTLN("Mid sequence");
+			DEBUG_PRINT("speed: "); DEBUG_PRINTLN(_keyFrames[0].speed);
+			DEBUG_PRINT("acc: "); DEBUG_PRINTLN(_keyFrames[0].acceleration);
+			DEBUG_PRINT("position: "); DEBUG_PRINTLN(_keyFrames[0].position);
+			DEBUG_PRINT("time: "); DEBUG_PRINTLN(_keyFrames[0].timeOut);
+		}
 	}
 
 	switch (_ctrlState)
@@ -173,7 +243,7 @@ void Animator::run()
 	case DIRECT:
 		// set values
 		_pBulb->setRGB(_keyFrames[_animationIndex].color);
-		_pWinch->setTarget(_keyFrames[_animationIndex].position, MAX_SPEED, MAX_ACCELERATION);
+		_pWinch->setTarget(_keyFrames[_animationIndex].position, STEPPER_MAX_SPEED, STEPPER_MAX_ACCELERATION);
 		_ctrlState = DIRECT_RUN;
 		break;
 
@@ -220,6 +290,27 @@ void Animator::run()
 	case FX_ALARM2_RUN:
 		alarmFX2.run(_keyFrames[_animationIndex].color, _keyFrames[_animationIndex].rate);
 		next();
+		break;
+
+	case STOP:
+		if (_pWinch->stop())
+		{
+			//stepper stoped
+			transform();
+			//reset animation and timer
+			_animationIndex = 0;
+			_sinceLast = 0;
+			_ctrlState = _keyFrames[0].state;
+			DEBUG_PRINTLN("STOPPED");
+		}
+		break;
+
+	case CALIBRATE:
+		if (_pWinch->calibrate())
+		{
+			// calibration done
+			_ctrlState = NONE;
+		}
 		break;
 
 	default:

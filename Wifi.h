@@ -1,4 +1,6 @@
 #pragma once
+#include "UniqeID.h"
+using namespace UniqeID;
 
 class WifiController
 {
@@ -54,7 +56,12 @@ void WifiController::process()
 
 volatile bool WifiController::isMsgReady()
 {
-	return _msgReady;
+	if (_msgReady)
+	{
+		_msgReady = false;
+		return true;
+	}
+	return false;
 }
 
 volatile bool WifiController::loop()
@@ -171,8 +178,14 @@ void WifiController::wifiInit()
 	while (!_esp->ready());
 
 	// Setup Mqtt client
+	uint32_t uniqe_ID;
+	read_myID(&uniqe_ID);
+
 	DEBUG_PRINTLN("Teensy: setup mqtt client");
-	if (!_mqtt->begin(MQTT_CLIENT_ID1, "", "", 60, 1)) {
+	DEBUG_PRINT("Teensy: ID = ");
+	DEBUG_PRINTLN(uniqe_ID);
+
+	if (!_mqtt->begin(String(uniqe_ID, DEC).c_str(), "", "", 60, 1)) {
 		DEBUG_PRINTLN("Teensy: fail to setup mqtt");
 		while (1); //reset
 	}

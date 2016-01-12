@@ -136,6 +136,8 @@
     <ClInclude Include="Bulb.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="StepCalc.h" />
+    <ClInclude Include="UniqeID.h" />
     <ClInclude Include="Wifi.h" />
     <ClInclude Include="Winch.h" />
     <ClInclude Include="__vm\.AmbiMorph.vsarduino.h" />
