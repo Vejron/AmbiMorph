@@ -175,14 +175,14 @@ void Animator::transform()
 		}
 		else 
 		{
-			double maxSpeed = calculateSpeedLimit(_keyFrames[i].timeOut / 1000.0, stepsToMove,
+			float maxSpeed = calculateSpeedLimit(_keyFrames[i].timeOut / 1000.0, stepsToMove,
 				STEPPER_MAX_SPEED, STEPPER_MAX_ACCELERATION);
 			_keyFrames[i].speed = maxSpeed;
 			_keyFrames[i].acceleration = STEPPER_MAX_ACCELERATION;
 			DEBUG_PRINT("Calculated speed: "); DEBUG_PRINTLN(maxSpeed);
 			//console.log(stepsToMove);
 			//console.log(maxSpeed);
-			if (0.001 < 0.01) //TODO: SOMETHING VERY WRONG
+			if (maxSpeed == 0.0) //TODO: SOMETHING VERY WRONG
 			{
 				DEBUG_PRINT("Calculated speed: "); DEBUG_PRINTLN(maxSpeed);
 				_keyFrames[i].timeOut = timeToMakeMove(stepsToMove, STEPPER_MAX_SPEED, STEPPER_MAX_ACCELERATION) * 1000;
@@ -226,7 +226,7 @@ void Animator::run()
 		else
 		{
 			//mid sequence, stop motor and get valid start position
-			_ctrlState == STOP;
+			_ctrlState = STOP;
 			DEBUG_PRINTLN("Mid sequence");
 			DEBUG_PRINT("speed: "); DEBUG_PRINTLN(_keyFrames[0].speed);
 			DEBUG_PRINT("acc: "); DEBUG_PRINTLN(_keyFrames[0].acceleration);

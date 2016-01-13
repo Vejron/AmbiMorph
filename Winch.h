@@ -4,7 +4,7 @@ class Winch
 {
 private:
 	volatile bool m_calibrationInProgress = false;
-	volatile bool m_stopping = false;
+	bool m_stopping = false;
 	volatile bool m_calibrated = false;
 	volatile bool m_enabled = true;
 	volatile int m_target;
@@ -156,10 +156,12 @@ public:
 		{
 			m_stepper.stop();
 			m_stopping = true;
+			DEBUG_PRINTLN("START STOPPING");
 		}
-		if (isAtTarget())
+		else if (isAtTarget())
 		{
 			m_stopping = false;
+			DEBUG_PRINTLN("HAS STOPPED");
 			return true;
 		}
 		return false;
@@ -167,8 +169,9 @@ public:
 
 	bool isAtTarget()
 	{
-		if (m_stepper.distanceToGo() == 0) return true;
-		else return false;
+		if (m_stepper.distanceToGo() == 0) 
+			return true;
+		return false;
 	}
 
 	long getPosition()
